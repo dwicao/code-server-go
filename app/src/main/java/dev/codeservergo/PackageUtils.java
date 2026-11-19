@@ -22,6 +22,35 @@ final class PackageUtils {
         }
     }
 
+    /** True on Android 11+ when the user granted all-files access. */
+    static boolean needsAllFilesAccess(Context context) {
+        if (android.os.Build.VERSION.SDK_INT >= 30) {
+            try {
+                return !android.os.Environment.isExternalStorageManager();
+            } catch (Throwable t) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** Opens the settings screen where the user grants all-files access. */
+    static void openAllFilesAccessSettings(Context context) {
+        try {
+            android.content.Intent intent =
+                    new android.content.Intent(android.provider.Settings
+                            .ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
+            intent.setData(android.net.Uri.parse("package:" + context.getPackageName()));
+            context.startActivity(intent);
+        } catch (Throwable t) {
+            try {
+                context.startActivity(new android.content.Intent(
+                        android.provider.Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION));
+            } catch (Throwable ignored) {
+            }
+        }
+    }
+
     /** Opens the settings screen where the user grants the permission. */
     static void openUnknownSourcesSettings(Context context) {
         try {

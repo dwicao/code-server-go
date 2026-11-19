@@ -8,6 +8,9 @@
 # <tag>      release tag, e.g. v1.2.0
 # <apk-file> path to the built, signed APK (used to compute sha256 and the asset name)
 set -euo pipefail
+SRC_VERSION_JSON="${SRC_VERSION_JSON:-$PWD/version.json}"
+
+if [ ! -f "$SRC_VERSION_JSON" ]; then SRC_VERSION_JSON="$(dirname "$0")/../version.json"; fi
 
 TAG="${1:-}"
 APK="${2:-}"
@@ -18,14 +21,16 @@ NOTES="${3:-}"
 REPO="${GITHUB_REPOSITORY:-dwicao/code-server-go}"
 
 VERSION_NAME="${TAG#v}"
-VERSION_CODE="$(python3 -c "import json;print(json.load(open('$PWD/version.json'))['versionCode'])")"
+VERSION_CODE="$(python3 -c "import json,sys;print(json.load(open(sys.argv[1]))['versionCode'])" "$SRC_VERSION_JSON")"
 SHA256="$(sha256sum "$APK" | awk '{print $1}')"
 APK_NAME="$(basename "$APK")"
 APK_URL="https://github.com/$REPO/releases/download/$TAG/$APK_NAME"
 RELEASE_URL="https://github.com/$REPO/releases/tag/$TAG"
 
+if [ "$APK" = "$SRC_VERSION_JSON" ]; then SRC_VERSION_JSON=""; fi
+
 if [ -z "$NOTES" ]; then
-    NOTES="$(python3 -c "import json;print(json.load(open('$PWD/version.json')).get('notes',''))")"
+    NOTES="$(python3 -c "import json,sys;print(json.load(open(sys.argv[1])).get('notes',''))" "${SRC_VERSION_JSON:-$PWD/version.json}")"
 fi
 
 python3 - "$VERSION_NAME" "$VERSION_CODE" "$APK_URL" "$SHA256" "$APK_NAME" "$NOTES" "$RELEASE_URL" <<'PY'

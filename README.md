@@ -136,6 +136,17 @@ comparison and the tar.gz extractor that defeated us in earlier releases:
 bash tools/test.sh
 ```
 
+## Storage access (required for /sdcard)
+
+An app cannot read directories it does not own without the all-files-access permission. On this
+device `/sdcard/Projects` is group-readable only, so the editor shows **empty folders** until the
+user enables it:
+
+> Settings → **Allow management of all files** for CodeServer Go
+
+or through the app: *Local editor → Storage access* (granted once; not needed for your remote
+server's files).
+
 ## Local editor (runs on the phone, no PC needed)
 
 The home screen has a **Local editor** card. *Set up* downloads ~133 MB and unpacks:

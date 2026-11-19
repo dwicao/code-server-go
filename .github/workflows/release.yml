@@ -53,7 +53,10 @@ jobs:
         run: |
           TAG="${GITHUB_REF#refs/tags/}"
           echo "tag=$TAG APK=$APK"
-          bash tools/make-version-json.sh "$TAG" "$APK" > version.json
+          cp version.json .version.src.json
+          SRC_VERSION_JSON="$PWD/.version.src.json" bash tools/make-version-json.sh "$TAG" "$APK" > version.release.json
+          mv version.release.json version.json
+          printf 'release version.json:\n'
           cat version.json
 
       - name: Create GitHub release

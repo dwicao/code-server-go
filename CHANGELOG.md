@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.2.1 — storage access + release-pipeline fix
+- **Fixed:** the app could not list files on `/sdcard` — code-server showed empty folders.
+  The app now declares `MANAGE_EXTERNAL_STORAGE` and opens the system grant screen when asked;
+  Start is blocked (with a prompt) until the user allows management of all files.
+- **Fixed:** the release workflow's `Generate version.json` step failed instantly (it redirected
+  into the very `version.json` the generator reads — 0 ms failures, steps `⑧`).
+  The generator now reads an explicit source copy (`SRC_VERSION_JSON`), and the workflow stages
+  it, generates, then publishes so the source committed to git stays clean.
+- **Changed:** `version.json` is the in-app-update manifest (`versionCode`/`versionName`/`notes`);
+  attached release assets add `apkUrl`/`apkName`/`sha256`/`releaseUrl`.
+
+
 ## 1.2.0 — CI, in-app updates, unit tests
 - **New:** unit tests for URL handling, version comparison and the tar.gz extractor
   (`app/src/test`, run with `tools/test.sh`). 15 tests covering the dialects that caused the

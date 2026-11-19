@@ -326,6 +326,15 @@ public class HomeActivity extends Activity {
     }
 
     private void startLocalServer() {
+        if (PackageUtils.needsAllFilesAccess(this)) {
+            new AlertDialog.Builder(this)
+                    .setTitle("Storage access needed")
+                    .setMessage("Android does not let apps list files on /sdcard without all-files access. In Settings, enable “Allow management of all files” for CodeServer Go, then come back and tap Start again.")
+                    .setPositiveButton(android.R.string.ok, (d, w) ->
+                            PackageUtils.openAllFilesAccessSettings(this))
+                    .show();
+            return;
+        }
         final ProgressBar spinner = new ProgressBar(this);
         final TextView label = Ui.text(this, getString(R.string.local_starting), pal.textDim,
                 13f, false);
@@ -632,6 +641,10 @@ public class HomeActivity extends Activity {
             Ui.toast(this, "Trusted certificates cleared");
         }));
 
+        box.addView(settingRow("Storage access",
+                PackageUtils.needsAllFilesAccess(this)
+                        ? "All-files access not granted" : "All-files access granted",
+                v -> PackageUtils.openAllFilesAccessSettings(this)));
         box.addView(settingRow(getString(R.string.check_updates),
                 "Last checked: " + lastCheckLabel(), v -> checkForUpdates(true)));
         box.addView(settingRow(getString(R.string.about), getString(R.string.version,
