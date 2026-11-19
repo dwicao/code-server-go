@@ -7,6 +7,11 @@ installs and runs one **on the phone itself** with a bundled proot runtime.
 Verified on a Samsung Galaxy Z Fold 6 (Android 16): the local editor installs, boots, and opens
 VS Code with `/sdcard/Projects` as the workspace.
 
+![CodeServer Go running the local editor in Samsung DeX](docs/dex-local-editor.jpg)
+
+*The local editor in DeX: code-server running on the phone via the bundled proot runtime,
+with `/sdcard/Projects` as the workspace — no root, no Termux.*
+
 ```
 ┌─────────────────────────────┐        ┌──────────────────────────────┐
 │  Samsung DeX / phone        │  HTTPS │  your PC / VPS / NAS         │
