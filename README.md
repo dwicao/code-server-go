@@ -65,18 +65,18 @@ The toolchain has no Gradle: on an arm64 device (or inside a proot like this one
 
 ```bash
 # dependencies (Ubuntu 24.04 arm64 / proot)
-apt-get install -y openjdk-17-jdk-headless android-sdk-build-tools apksigner zipalign unzip python3
+apt-get install -y openjdk-17-jdk-headless android-sdk-build-tools apksigner unzip python3
 
-# android.jar (API 34) — one line, no SDK manager
-curl -LO https://dl.google.com/android/repository/platform-34-ext7_r03.zip
-unzip -o platform-34-ext7_r03.zip android-34/android.jar -d tools/ && mv tools/android-34 tools/android-34
+# the two large build inputs (android.jar + r8 dexer) are not committed
+bash tools/fetch-tools.sh
 
-# build
-bash build.sh            # -> dist/CodeServerGo-1.0.2.apk  (already signed)
+# build + sign
+bash build.sh                                   # -> dist/CodeServerGo-1.1.6.apk
+VERSION_NAME=1.2.0 VERSION_CODE=20 bash build.sh # or bump the version
 ```
 
-`tools/r8.jar` (the dexer, pure Java) and `tools/android-34/android.jar` are vendored here so the
-build works offline. Override anything with `AAPT2=`, `ANDROID_JAR=`, `D8_JAR=`, `ZIPALIGN=`,
+`tools/r8.jar` (dexer, pure Java) and `tools/android-34/android.jar` are downloaded by
+`tools/fetch-tools.sh`; after that the build works offline. Override anything with `AAPT2=`, `ANDROID_JAR=`, `D8_JAR=`, `ZIPALIGN=`,
 `APKSIGNER=`, `VERSION_NAME=`, `VERSION_CODE=`.
 
 The signing key is generated on first build at `keystore/codeservergo.jks` — keep it, otherwise
