@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.4.0 — in-app editor updates
+- **New:** "Update" button on the local editor card. It checks the latest GitHub release of
+  code-server, shows an update dialog only when a newer one exists, then downloads it, unpacks it
+  in-place, keeps the old one aside until the swap succeeds, and applies the change while the
+  editor server is stopped — restarting it afterwards when it was running.
+- Installed-version tracking: the runtime now records the installed bundle's version in
+  `opt/cs/build-version`; fresh installs read 4.96.4 as before.
+- **Fixed:** no automatic apply of a mismatched-bundle upgrade. The update path refuses bundles
+  that look incomplete (no `out/node/entry.js`).
+
+
 ## 1.3.1 — installer actually installs now
 - **Fixed:** after an update downloads, the system installer never opened — missing
   `REQUEST_INSTALL_PACKAGES` permission meant the app could not trigger one.

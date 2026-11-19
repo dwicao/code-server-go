@@ -107,6 +107,13 @@ and insecure by design (see the file header there) — do not put a store-grade 
 uninstall once and reinstall (the app stores no server-side state worth keeping; your server list
 lives in app prefs and would be lost once).
 
+## In-app editor updates
+
+The local runtime can update itself in-app. Settings → the local editor card's **Update** button
+checks the newest `coder/code-server` release on GitHub, shows the change
+(`4.96.4 → 4.145.2`) when one is available, then downloads `code-server-<ver>-linux-arm64.tar.gz`,
+unpacks it in place of the bundled editor, and restarts the local server if it was running.
+
 ## In-app updates
 
 The app polls `releases/latest/download/version.json` (once a day, or immediately from

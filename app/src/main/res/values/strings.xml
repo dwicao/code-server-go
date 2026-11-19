@@ -38,6 +38,7 @@
     <string name="local_remove">Remove</string>
     <string name="local_diagnose">Diagnose</string>
     <string name="local_repair">Repair</string>
+    <string name="local_update">Update</string>
     <string name="local_setup_title">Set up local editor</string>
     <string name="local_setup_body">Downloads a small Linux base system plus code-server (about 133 MB) and unpacks it inside this app. Wi‑Fi recommended.
 

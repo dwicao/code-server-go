@@ -72,6 +72,9 @@ final class RuntimeInstaller {
                 deleteRecursive(staging);
             }
 
+            // record the bundle version so the updater can compare against the latest release
+            writeBundleVersion(app, LocalEditorUpdate.BUNDLED_VERSION);
+
             ensureNativeModules(app);
             fixPermissions(rootfs);
             int repaired = ensureExecutable(rootfs);
@@ -382,6 +385,18 @@ final class RuntimeInstaller {
             int n = in.read(buf);
             in.close();
             CrashLog.exportText(app, "local-runtime.log", new String(buf, 0, Math.max(n, 0), "UTF-8"));
+        } catch (Exception ignored) {
+        }
+    }
+
+    /** Writes the bundle-version marker for the in-app updater. */
+    private static void writeBundleVersion(Context app, String version) {
+        try {
+            File marker = new File(Runtime.rootfs(app), LocalEditorUpdate.markerPath());
+            if (marker.getParentFile() != null) marker.getParentFile().mkdirs();
+            FileOutputStream fos = new FileOutputStream(marker);
+            fos.write(version.getBytes("UTF-8"));
+            fos.close();
         } catch (Exception ignored) {
         }
     }

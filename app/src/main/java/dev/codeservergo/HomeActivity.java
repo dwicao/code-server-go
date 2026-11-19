@@ -219,6 +219,8 @@ public class HomeActivity extends Activity {
             buttons.addView(actionPill(getString(R.string.local_diagnose), false,
                     v -> runDiagnostics()));
         } else {
+            buttons.addView(actionPill(getString(R.string.local_update), false,
+                    v -> confirmUpdateCodeServer()));
             buttons.addView(actionPill(getString(R.string.local_start), true,
                     v -> startLocalServer()));
             buttons.addView(actionPill(getString(R.string.local_repair), false,
@@ -766,6 +768,109 @@ public class HomeActivity extends Activity {
                 Ui.toast(this, "Installer did not start: " + tInstall2.getMessage());
             }
         }
+    }
+
+    // ----------------------------------------------- code-server version
+
+    private void confirmUpdateCodeServer() {
+        final TextView label = Ui.text(this, "Checking for newer code-server\u2026",
+                pal.textDim, 13f, false);
+        LinearLayout box = new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        int p = Ui.dp(this, 22);
+        box.setPadding(p, Ui.dp(this, 16), p, 0);
+        box.addView(label);
+
+        final AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle("Update code-server")
+                .setView(box)
+                .setCancelable(false)
+                .create();
+        dialog.show();
+
+        new Thread(() -> {
+            LocalEditorUpdate.Release latest = null;
+            String err = null;
+            try {
+                latest = LocalEditorUpdate.fetchLatest();
+            } catch (Throwable t) {
+                err = t.getClass().getSimpleName() + ": " + t.getMessage();
+            }
+            final LocalEditorUpdate.Release result = latest;
+            final String error = err;
+            ui.post(() -> {
+                dialog.dismiss();
+                if (error != null) {
+                    Ui.toast(this, "Could not check GitHub: " + error);
+                    return;
+                }
+                String installed = LocalEditorUpdate.installedVersion(this);
+                String latestVersion = result != null ? result.version : "?";
+                if (installed.equals(latestVersion)) {
+                    Ui.toast(this, "Already on latest (" + installed + ")");
+                    return;
+                }
+                if (result == null) {
+                    Ui.toast(this, "Could not read the latest release");
+                    return;
+                }
+                String size = result.assetBytes > 0
+                        ? (" (" + (result.assetBytes / (1024 * 1024)) + " MB)") : "";
+                new AlertDialog.Builder(this)
+                        .setTitle("Update code-server")
+                        .setMessage("Update from " + installed + "\u0020\u2192\u0020"
+                                + latestVersion + size + "?\n\n"
+                                + "Downloads and replaces the editor bundle in place.")
+                        .setPositiveButton("Update",
+                                (d, w) -> runCodeServerUpdate())
+                        .setNegativeButton(R.string.cancel, null)
+                        .show();
+            });
+        }, "check-latest").start();
+    }
+
+    private void runCodeServerUpdate() {
+        final TextView label = Ui.text(this, "Downloading…", pal.textDim, 13f, false);
+        LinearLayout box = new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        int p = Ui.dp(this, 22);
+        box.setPadding(p, Ui.dp(this, 16), p, 0);
+        box.addView(label);
+        final ProgressBar bar = new ProgressBar(this, null,
+                android.R.attr.progressBarStyleHorizontal);
+        bar.setMax(1000);
+        LinearLayout.LayoutParams blp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        blp.topMargin = Ui.dp(this, 12);
+        bar.setLayoutParams(blp);
+        box.addView(bar);
+
+        final AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle("Update code-server")
+                .setView(box)
+                .setCancelable(false)
+                .create();
+        dialog.show();
+
+        new Thread(() -> LocalEditorUpdate.update(this, new LocalEditorUpdate.Callback() {
+            @Override
+            public void onProgress(String stage, float fraction) {
+                ui.post(() -> {
+                    label.setText(stage);
+                    bar.setProgress((int) (fraction * 1000));
+                });
+            }
+
+            @Override
+            public void onDone(boolean ok, String message) {
+                ui.post(() -> {
+                    dialog.dismiss();
+                    Ui.toast(HomeActivity.this,
+                            ok ? message : "Update failed: " + message);
+                    renderLocal();
+                });
+            }
+        }), "cs-update").start();
     }
 
     private String themeLabel() {

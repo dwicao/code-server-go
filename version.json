@@ -1,5 +1,5 @@
 {
-  "versionCode": 23,
-  "versionName": "1.3.1",
-  "notes": "Installer now actually opens; rail removed; updater fixes."
+  "versionCode": 24,
+  "versionName": "1.4.0",
+  "notes": "In-app update of the bundled code-server (latest 4.x)."
 }
