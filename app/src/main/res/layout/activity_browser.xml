@@ -54,8 +54,21 @@
                     android:id="@+id/status_dot"
                     android:layout_width="8dp"
                     android:layout_height="8dp"
-                    android:layout_marginEnd="8dp"
+                    android:layout_marginEnd="6dp"
                     android:background="@drawable/bg_dot" />
+
+                <TextView
+                    android:id="@+id/txt_status"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="10dp"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    android:singleLine="true"
+                    android:text="idle"
+                    android:textColor="#FF8A93A0"
+                    android:textSize="11sp"
+                    android:visibility="gone" />
 
                 <TextView
                     android:id="@+id/txt_title"
@@ -113,7 +126,7 @@
             <!-- DeX / tablet rail: one tap to jump between servers. -->
             <LinearLayout
                 android:id="@+id/rail"
-                android:layout_width="56dp"
+                android:layout_width="64dp"
                 android:layout_height="match_parent"
                 android:background="#FF171B21"
                 android:gravity="center_horizontal"

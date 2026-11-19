@@ -197,23 +197,47 @@ final class UpdateChecker {
                                         long id, ReleaseInfo info, Callback2 callback) {
         try {
             Uri local = dm.getUriForDownloadedFile(id);
-            if (info.sha256 != null && !info.sha256.isEmpty() && local != null) {
-                File file = new File(local.getPath()); // file:// or content:// with path
-                if (!file.exists()) {
-                    // content:// URIs (documents) are not File-backed here — skip sha check
-                } else {
-                    String actual = sha256File(file);
-                    if (!actual.equalsIgnoreCase(info.sha256)) {
-                        dm.remove(id);
-                        callback.onFailed("sha256 mismatch — download discarded");
-                        return;
-                    }
+            File file = null;
+            if (local != null) {
+                // file:// URIs are directly usable; content:// must come through the resolver
+                file = tryLocalPath(context, local);
+            }
+            if (file != null && info.sha256 != null && !info.sha256.isEmpty()) {
+                String actual = sha256File(file);
+                if (!actual.equalsIgnoreCase(info.sha256)) {
+                    dm.remove(id);
+                    callback.onFailed("sha256 mismatch — download discarded");
+                    return;
+                }
+            }
+            if (file != null) {
+                // Signer pin: even a byte-perfect APK is unusable if it is signed with anything
+                // other than our release key.
+                if (!Signers.matchesPin(context, file)) {
+                    dm.remove(id);
+                    callback.onFailed("signature mismatch — download discarded");
+                    return;
                 }
             }
             callback.onDownloaded(local);
         } catch (Throwable t) {
             callback.onFailed(t.getClass().getSimpleName() + ": " + t.getMessage());
         }
+    }
+
+    /**
+     * DownloadManager hands back file:// URIs pointed at the real file. If the release URL is a
+     * content:// scheme (rare for us), downloads land under /sdcard/Android/data/…/files/ — use
+     * the path as-is; the signing check tolerates a read failure and fails safe.
+     */
+    private static File tryLocalPath(Context context, Uri uri) {
+        try {
+            if ("file".equalsIgnoreCase(uri.getScheme())) return new File(uri.getPath());
+            File f = new File(uri.getPath());
+            if (f.exists()) return f;
+        } catch (Throwable ignored) {
+        }
+        return null;
     }
 
     interface Callback2 {

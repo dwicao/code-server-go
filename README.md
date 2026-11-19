@@ -63,6 +63,27 @@ things, and nothing else — it is a thin, fast shell around the real code-serve
 - Per-server zoom (CSS zoom, persisted), "keep screen on", shareable address copy.
 - Dark / light / follow-system theme, applied without destroying the live session.
 
+## Security model
+
+CodeServer Go is a **sideloaded** app; there is no store review. It updates through GitHub release
+downloads, which means the in-app updater has to decide whether to trust what it downloads. It does
+two checks:
+
+1. **SHA-256 of the APK** against `sha256` in `releases/latest/download/version.json`.
+2. **Signer certificate** against a fingerprint baked into the app (`Signers.EXPECTED_CERT_SHA256`).
+   That is the AOSP test key shipped in every Android source tree — not a secret, just a constant
+   identity check. The pin rules out casual replacement with an APK signed under a different key
+   (e.g. by someone who can publish a release but not push to `main`).
+
+The pin does **not** stop a compromised key holder from publishing a new APK — the test key is
+public. If you review what you install, build from source instead of using releases:
+
+```bash
+git clone https://github.com/dwicao/code-server-go && cd code-server-go
+apt-get install -y openjdk-17-jdk-headless android-sdk-build-tools apksigner unzip python3 curl
+bash tools/fetch-tools.sh && bash build.sh
+```
+
 ## CI & releases
 
 GitHub Actions builds every push and PR (`.github/workflows/ci.yml`): toolchain install, unit
@@ -90,8 +111,9 @@ lives in app prefs and would be lost once).
 
 The app polls `releases/latest/download/version.json` (once a day, or immediately from
 *Settings → Check for updates*). When `versionCode` is newer than the installed one it offers to
-download the APK via `DownloadManager`, verifies the SHA-256 hash, and hands the result to the
-system package installer — no root, no permissions beyond installing unknown apps.
+download the APK via `DownloadManager`, verifies the SHA-256 hash **and** the signer certificate
+pin described above, then hands the result to the system package installer — no root, no permissions
+beyond installing unknown apps.
 
 ## Build
 

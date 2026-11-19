@@ -26,5 +26,5 @@ jobs:
       - name: Build + sign
         run: bash build.sh
 
-      - name: Verify signature
-        run: apksigner verify --print-certs dist/*.apk
+      - name: Verify release (package, version, signer pin)
+        run: bash tools/verify-release.sh

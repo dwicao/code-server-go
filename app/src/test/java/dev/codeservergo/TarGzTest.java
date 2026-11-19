@@ -122,6 +122,66 @@ public class TarGzTest {
         assertArrayEquals(content, Files.readAllBytes(link));
     }
 
+
+    @Test
+    public void extractsHardlinkWhoseTargetAppearsLaterInStream() throws Exception {
+        // The hard link points at a file that appears AFTER it in the archive; the second pass
+        // must resolve it.
+        String target = "dir/target.txt";
+        byte[] content = "deferred-data".getBytes(StandardCharsets.UTF_8);
+        addEntry("dir/link.txt", '1', 0644, new byte[0], target);
+        addEntry(target, '0', 0644, content, null);
+        finishTar();
+
+        FileOrDir d = newFolder("out5");
+        TarGz.extract(gzipped(tar.toByteArray()), d.f, null);
+
+        assertArrayEquals(content,
+                Files.readAllBytes(new java.io.File(d.f, "dir/link.txt").toPath()));
+    }
+
+    @Test
+    public void largerThanUstarCeilingPathIsPreservedByPrefixNameSplit() throws Exception {
+        // Between GNU-long-name and plain, tar sometimes stores long paths prefix/name-split.
+        String name = repeat("abcdefghij/", 14) + "leaf.txt"; // ~154 chars
+        byte[] content = "split".getBytes(StandardCharsets.UTF_8);
+        addEntry(name, '0', 0644, content, null);
+        finishTar();
+
+        FileOrDir d = newFolder("out6");
+        TarGz.extract(gzipped(tar.toByteArray()), d.f, null);
+
+        assertArrayEquals(content,
+                Files.readAllBytes(new java.io.File(d.f, name).toPath()));
+    }
+
+    @Test
+    public void archiveWithOnlyDirectoriesExtractsWithoutError() throws Exception {
+        addEntry("a/", '5', 0755, new byte[0], null);
+        addEntry("b/", '5', 0755, new byte[0], null);
+        addEntry("b/c/", '5', 0755, new byte[0], null);
+        finishTar();
+
+        FileOrDir d = newFolder("out7");
+        TarGz.extract(gzipped(tar.toByteArray()), d.f, null);
+
+        org.junit.Assert.assertTrue(new java.io.File(d.f, "a").isDirectory());
+        org.junit.Assert.assertTrue(new java.io.File(d.f, "b/c").isDirectory());
+    }
+
+    @Test
+    public void fileWithoutExecModeStaysNonExecutable() throws Exception {
+        byte[] content = "plain".getBytes(StandardCharsets.UTF_8);
+        addEntry("doc.txt", '0', 0644, content, null);
+        finishTar();
+
+        FileOrDir d = newFolder("out8");
+        TarGz.extract(gzipped(tar.toByteArray()), d.f, null);
+
+        org.junit.Assert.assertFalse("no exec bit expected",
+                new java.io.File(d.f, "doc.txt").canExecute());
+    }
+
     // ------------------------------------------------------------- tar writer
 
     private String repeat(String s, int n) {

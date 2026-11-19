@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.3.0 — pinned updater, slimmed BrowserActivity, DeX chrome
+- **Security:** in-app updater now refuses any downloaded APK signed by a certificate other than
+  the pinned release key (AOSP test key, `Signers.EXPECTED_CERT_SHA256`) — protects against casual
+  compromise of the release channel. Existing installs keep the old behavior for the current APK.
+- **Refactor:** `BrowserActivity` split: `EditorOverlay` (connect/error full-screen overlay) and
+  `EditorRail` (DeX server rail) extracted; behaviour is unchanged.
+- **Tests:** `ServerTest` added; `TarGzTest` extended to deferred hard links, GNU long-name paths,
+  ustar prefix/name splits, archive-of-only-directories, mode-bit preservation (19 tests).
+- **CI:** new `tools/verify-release.sh` asserts package name, versionName/versionCode match
+  `version.json`, and signer fingerprint equals the pin on every build (ci + release workflows).
+  Both workflows also now exit nonzero and block archiving if the APK fails the check.
+- **DeX polish:** rail widened to 64dp; real status pill next to the title (accent/"offline");
+  fading "Esc exit · F5 reload" hint in full screen.
+- **Docs:** README "Security model" section with the threat table (what the pin blocks and what it
+  doesn't); note on `MANAGE_EXTERNAL_STORAGE` grant.
+
+
 ## 1.2.1 — storage access + release-pipeline fix
 - **Fixed:** the app could not list files on `/sdcard` — code-server showed empty folders.
   The app now declares `MANAGE_EXTERNAL_STORAGE` and opens the system grant screen when asked;

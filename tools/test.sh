@@ -32,7 +32,10 @@ echo "==> compiling main sources (pure-java subset)"
 javac -nowarn -encoding UTF-8 -d "$OUT" \
     "$MAIN_SRC/Urls.java" \
     "$MAIN_SRC/Versions.java" \
-    "$MAIN_SRC/TarGz.java"
+    "$MAIN_SRC/TarGz.java" \
+    "$MAIN_SRC/Server.java" \
+    "$ROOT/tools/test-shim/org/json/JSONException.java" \
+    "$ROOT/tools/test-shim/org/json/JSONObject.java"
 
 echo "==> compiling tests"
 javac -nowarn -encoding UTF-8 -cp "$OUT:$LIB/junit-4.13.2.jar:$LIB/hamcrest-core-1.3.jar" \

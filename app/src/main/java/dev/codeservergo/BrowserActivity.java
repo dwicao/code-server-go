@@ -78,13 +78,11 @@ public class BrowserActivity extends Activity {
     private LinearLayout rail;
     private LinearLayout keyStrip;
     private FrameLayout root;
-    private View overlay;
-    private View overlayButton;
-    private View overlaySpinner;
+    private View overlayView;
     private ProgressBar progress;
     private TextView txtTitle;
-    private TextView overlayTitle;
-    private TextView overlayBody;
+    private TextView txtStatus;
+    private EditorOverlay overlay;
     private View statusDot;
     private ImageButton btnBack;
     private ImageButton btnForward;
@@ -92,6 +90,7 @@ public class BrowserActivity extends Activity {
     private ImageButton btnKeyboard;
     private ImageButton btnFullscreen;
     private ImageView exitFab;
+    private View fullscreenHint;
 
     private ValueCallback<Uri[]> fileCallback;
     private final Handler ui = new Handler(Looper.getMainLooper());
@@ -173,13 +172,11 @@ public class BrowserActivity extends Activity {
         topBar = findViewById(R.id.top_bar);
         rail = findViewById(R.id.rail);
         keyStrip = findViewById(R.id.key_strip);
-        overlay = findViewById(R.id.overlay);
-        overlayButton = findViewById(R.id.overlay_button);
-        overlaySpinner = findViewById(R.id.overlay_spinner);
-        overlayTitle = findViewById(R.id.overlay_title);
-        overlayBody = findViewById(R.id.overlay_body);
+        overlayView = findViewById(R.id.overlay);
+        overlay = new EditorOverlay(overlayView);
         progress = findViewById(R.id.progress);
         txtTitle = findViewById(R.id.txt_title);
+        txtStatus = findViewById(R.id.txt_status);
         statusDot = findViewById(R.id.status_dot);
         btnBack = findViewById(R.id.btn_back);
         btnForward = findViewById(R.id.btn_forward);
@@ -197,11 +194,9 @@ public class BrowserActivity extends Activity {
         topBar.setBackgroundColor(pal.surface);
         rail.setBackgroundColor(pal.dark ? 0xFF171B21 : 0xFFEDEFF3);
         keyStrip.setBackgroundColor(pal.dark ? 0xFF171B21 : 0xFFEDEFF3);
-        overlay.setBackgroundColor(pal.bg);
+        overlay.applyPalette(pal);
 
         txtTitle.setTextColor(pal.text);
-        overlayTitle.setTextColor(pal.text);
-        overlayBody.setTextColor(pal.textDim);
         statusDot.setBackground(Ui.dot(this, pal.dotIdle));
 
         int icon = pal.dark ? 0xFFD7DCE4 : 0xFF39414D;
@@ -352,40 +347,10 @@ public class BrowserActivity extends Activity {
         rail.setVisibility(show ? View.VISIBLE : View.GONE);
         if (!show) return;
 
-        rail.removeAllViews();
-        List<Server> servers = store.all();
-        for (final Server s : servers) {
-            boolean active = s.id.equals(server.id);
-            TextView t = Ui.text(this, initial(s.name), active ? pal.accent : pal.textDim, 14f, true);
-            t.setGravity(Gravity.CENTER);
-            int size = Ui.dp(this, 40);
-            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(size, size);
-            lp.topMargin = Ui.dp(this, 6);
-            t.setLayoutParams(lp);
-            t.setBackground(active ? getDrawable(R.drawable.bg_rail_active)
-                    : Ui.ripple(this, pal.accent, 12));
-            t.setOnClickListener(v -> switchServer(s));
-            t.setOnLongClickListener(v -> {
-                Ui.toast(this, s.name + "\n" + s.url);
-                return true;
-            });
-            rail.addView(t);
-        }
-
-        TextView add = Ui.text(this, "+", pal.textDim, 18f, false);
-        add.setGravity(Gravity.CENTER);
-        int size = Ui.dp(this, 40);
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(size, size);
-        lp.topMargin = Ui.dp(this, 10);
-        add.setLayoutParams(lp);
-        add.setBackground(Ui.ripple(this, pal.accent, 12));
-        add.setOnClickListener(v -> startActivity(new Intent(this, HomeActivity.class)));
-        rail.addView(add);
-    }
-
-    private String initial(String name) {
-        if (name == null || name.isEmpty()) return "?";
-        return name.substring(0, 1).toUpperCase(Locale.getDefault());
+        EditorRail.populate(rail, store.all(), server.id, pal,
+                s -> switchServer(s),
+                s -> Ui.toast(this, s.name + "\n" + s.url),
+                () -> startActivity(new Intent(this, HomeActivity.class)));
     }
 
     private void updateKeyStrip() {
@@ -412,6 +377,7 @@ public class BrowserActivity extends Activity {
 
         Window w = getWindow();
         if (on) {
+            flashFullscreenHint();
             w.getDecorView().setSystemUiVisibility(
                     View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
                             | View.SYSTEM_UI_FLAG_FULLSCREEN
@@ -422,6 +388,38 @@ public class BrowserActivity extends Activity {
             w.getDecorView().setSystemUiVisibility(0);
             applyPalette();
         }
+    }
+
+    /** Brief fading hint shown when full screen starts, then hides itself. */
+    private void flashFullscreenHint() {
+        if (fullscreenHint != null) {
+            root.removeView(fullscreenHint);
+            fullscreenHint = null;
+        }
+        TextView hint = Ui.text(this, "Esc exit · F5 reload", pal.text, 12f, false);
+        hint.setBackground(Ui.round(this, 0x99000000, 22));
+        int pad = Ui.dp(this, 12);
+        int pv = Ui.dp(this, 7);
+        hint.setPadding(pad, pv, pad, pv);
+        FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        lp.gravity = Gravity.BOTTOM | Gravity.START;
+        lp.leftMargin = Ui.dp(this, 24);
+        lp.bottomMargin = Ui.dp(this, 24);
+        hint.setLayoutParams(lp);
+        hint.setAlpha(0f);
+        root.addView(hint);
+        hint.animate().alpha(0.9f).setDuration(220).start();
+        fullscreenHint = hint;
+        ui.postDelayed(() -> {
+            if (fullscreenHint == null) return;
+            fullscreenHint.animate().alpha(0f).setDuration(260).withEndAction(() -> {
+                if (fullscreenHint != null) {
+                    root.removeView(fullscreenHint);
+                    fullscreenHint = null;
+                }
+            }).start();
+        }, 1600);
     }
 
     private void toggleKeyboard() {
@@ -606,8 +604,24 @@ public class BrowserActivity extends Activity {
 
     private void setStatus(int color, String label) {
         statusDot.setBackground(Ui.dot(this, color));
-        if (label != null && !label.isEmpty() && getTitle() != null) {
+        String chip = null;
+        if (label != null && !label.isEmpty()) {
+            if (label.equals(getString(R.string.offline))) {
+                chip = "offline";
+            } else if (label.equals(getString(R.string.connected)) || label.equals(getString(R.string.loading))
+                    || label.equals(server.host())) {
+                chip = label.equals(getString(R.string.connected)) ? "ok" : null;
+            }
             setTitleTextIfPlaceholder(label);
+        }
+        if (txtStatus != null) {
+            if (chip != null) {
+                txtStatus.setText(chip);
+                txtStatus.setTextColor(chip.equals("offline") ? pal.danger : pal.ok);
+                txtStatus.setVisibility(View.VISIBLE);
+            } else {
+                txtStatus.setVisibility(View.GONE);
+            }
         }
     }
 
@@ -622,20 +636,13 @@ public class BrowserActivity extends Activity {
     // --------------------------------------------------------------- overlay
 
     private void showLoading(String label) {
-        overlayTitle.setText(label);
-        overlayBody.setVisibility(View.GONE);
-        overlaySpinner.setVisibility(View.VISIBLE);
-        overlayButton.setVisibility(View.GONE);
-        overlay.setVisibility(View.VISIBLE);
+        overlay.showLoading(label);
     }
 
     private void showError(String detail) {
-        overlayTitle.setText(R.string.error_title);
-        overlayBody.setText(getString(R.string.error_body, detail == null ? "" : detail));
-        overlayBody.setVisibility(View.VISIBLE);
-        overlaySpinner.setVisibility(View.GONE);
-        overlayButton.setVisibility(View.VISIBLE);
-        overlayButton.setOnClickListener(v -> {
+        overlay.showError(detail, getString(R.string.error_title));
+        overlay.setErrorBody(getString(R.string.error_body, detail == null ? "" : detail));
+        overlay.setRetry(getString(R.string.retry), () -> {
             showLoading(getString(R.string.connecting));
             firstLoadDone = false;
             if (web != null) {
@@ -644,14 +651,13 @@ public class BrowserActivity extends Activity {
                 rebuildWebView();
             }
         });
-        overlay.setVisibility(View.VISIBLE);
         progress.setVisibility(View.INVISIBLE);
         setStatus(pal.danger, getString(R.string.offline));
         txtTitle.setText(server.name);
     }
 
     private void hideOverlay() {
-        overlay.setVisibility(View.GONE);
+        overlay.hide();
     }
 
     // ------------------------------------------------------------------- tls
