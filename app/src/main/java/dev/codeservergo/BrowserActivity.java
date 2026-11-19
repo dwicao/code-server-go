@@ -75,7 +75,6 @@ public class BrowserActivity extends Activity {
 
     private WebView web;
     private LinearLayout topBar;
-    private LinearLayout rail;
     private LinearLayout keyStrip;
     private FrameLayout root;
     private View overlayView;
@@ -155,7 +154,6 @@ public class BrowserActivity extends Activity {
         if (pendingUrl == null) pendingUrl = server.url;
 
         showLoading(getString(R.string.connecting));
-        updateRail();
         updateKeyStrip();
     }
 
@@ -170,7 +168,6 @@ public class BrowserActivity extends Activity {
     private void bindViews() {
         root = findViewById(R.id.root);
         topBar = findViewById(R.id.top_bar);
-        rail = findViewById(R.id.rail);
         keyStrip = findViewById(R.id.key_strip);
         overlayView = findViewById(R.id.overlay);
         overlay = new EditorOverlay(overlayView);
@@ -192,7 +189,6 @@ public class BrowserActivity extends Activity {
         w.setNavigationBarColor(pal.dark ? 0xFF1A1E24 : 0xFFFFFFFF);
         root.setBackgroundColor(pal.bg);
         topBar.setBackgroundColor(pal.surface);
-        rail.setBackgroundColor(pal.dark ? 0xFF171B21 : 0xFFEDEFF3);
         keyStrip.setBackgroundColor(pal.dark ? 0xFF171B21 : 0xFFEDEFF3);
         overlay.applyPalette(pal);
 
@@ -342,17 +338,6 @@ public class BrowserActivity extends Activity {
         return getResources().getConfiguration().keyboard != Configuration.KEYBOARD_NOKEYS;
     }
 
-    private void updateRail() {
-        boolean show = isWide() && !fullscreen;
-        rail.setVisibility(show ? View.VISIBLE : View.GONE);
-        if (!show) return;
-
-        EditorRail.populate(rail, store.all(), server.id, pal,
-                s -> switchServer(s),
-                s -> Ui.toast(this, s.name + "\n" + s.url),
-                () -> startActivity(new Intent(this, HomeActivity.class)));
-    }
-
     private void updateKeyStrip() {
         boolean show = prefs.extraKeys() && !fullscreen && !hasPhysicalKeyboard();
         keyStrip.setVisibility(show ? View.VISIBLE : View.GONE);
@@ -362,7 +347,6 @@ public class BrowserActivity extends Activity {
     public void onConfigurationChanged(Configuration c) {
         super.onConfigurationChanged(c);
         if (!uiReady || web == null) return;
-        updateRail();
         updateKeyStrip();
         // A DeX window can change DP size while the editor keeps running: nothing reloads.
     }
@@ -372,7 +356,6 @@ public class BrowserActivity extends Activity {
         topBar.setVisibility(on ? View.GONE : View.VISIBLE);
         progress.setVisibility(on || firstLoadDone ? View.GONE : View.VISIBLE);
         exitFab.setVisibility(on ? View.VISIBLE : View.GONE);
-        updateRail();
         updateKeyStrip();
 
         Window w = getWindow();
@@ -896,7 +879,6 @@ public class BrowserActivity extends Activity {
         zoom = prefs.zoom(s.id);
         firstLoadDone = false;
         txtTitle.setText(s.name);
-        updateRail();
         showLoading(getString(R.string.connecting));
         if (web == null) {
             rebuildWebView();
@@ -1098,7 +1080,6 @@ public class BrowserActivity extends Activity {
             return;
         }
         updateKeyStrip();
-        updateRail();
     }
 
     @Override

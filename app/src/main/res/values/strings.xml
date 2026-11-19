@@ -2,6 +2,7 @@
 <resources>
     <string name="app_name">CodeServer Go</string>
     <string name="tagline">Your code-server, as a real DeX app.</string>
+    <string name="switch_server">Switch server</string>
 
     <!-- Home / server list -->
     <string name="servers_title">Servers</string>
@@ -60,7 +61,6 @@ Nothing needs root, Termux or a computer: proot runs the runtime inside the app 
     <string name="back">Back</string>
     <string name="forward">Forward</string>
     <string name="reload">Reload</string>
-    <string name="switch_server">Switch server</string>
     <string name="keyboard">Keyboard</string>
     <string name="fullscreen">Full screen</string>
     <string name="exit_fullscreen">Exit full screen</string>

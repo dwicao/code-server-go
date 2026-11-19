@@ -123,23 +123,10 @@
             android:layout_weight="1"
             android:orientation="horizontal">
 
-            <!-- DeX / tablet rail: one tap to jump between servers. -->
-            <LinearLayout
-                android:id="@+id/rail"
-                android:layout_width="64dp"
-                android:layout_height="match_parent"
-                android:background="#FF171B21"
-                android:gravity="center_horizontal"
-                android:orientation="vertical"
-                android:paddingTop="8dp"
-                android:paddingBottom="8dp"
-                android:visibility="gone" />
-
             <FrameLayout
                 android:id="@+id/web_container"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1">
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
 
                 <WebView
                     android:id="@+id/web"

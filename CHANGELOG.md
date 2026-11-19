@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.3.1 — installer actually installs now
+- **Fixed:** after an update downloads, the system installer never opened — missing
+  `REQUEST_INSTALL_PACKAGES` permission meant the app could not trigger one.
+- **Fixed:** install flow now shows a clear "Allow installs from this app" dialog (with the exact
+  toggle name) when the user has not granted unknown-apps permission, rather than a fragile
+  "open unknown sources" settings screen.
+- **Changed:** install uses `ACTION_INSTALL_PACKAGE` first, `ACTION_VIEW` as fallback.
+- **Removed:** the 64dp DeX server rail — useless on phone and too wide on DeX. The top-bar
+  switch button remains the only server-switcher.
+
+
 ## 1.3.0 — pinned updater, slimmed BrowserActivity, DeX chrome
 - **Security:** in-app updater now refuses any downloaded APK signed by a certificate other than
   the pinned release key (AOSP test key, `Signers.EXPECTED_CERT_SHA256`) — protects against casual

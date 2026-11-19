@@ -723,20 +723,48 @@ public class HomeActivity extends Activity {
     }
 
     /** Hands the downloaded APK to the system package installer. */
+    /** Hands the downloaded APK to the system package installer. */
     private void installApk(android.net.Uri contentUri) {
+        if (PackageUtils.needsUnknownSourcesPermission(this)) {
+            requestUnknownSources(contentUri);
+            return;
+        }
+        launchInstaller(contentUri);
+    }
+
+    /** If unknown-apps permission is off, explain exactly what is missing. */
+    private void requestUnknownSources(final android.net.Uri contentUri) {
+        new AlertDialog.Builder(this)
+                .setTitle("Allow installs from this app")
+                .setMessage("Android blocks installing updates unless you allow it.\n\n"
+                        + "Tap Continue, enable \u201cAllow from this source\u201d for "
+                        + "CodeServer Go, then come back.")
+                .setPositiveButton("Continue",
+                        (d, w) -> PackageUtils.openUnknownSourcesSettings(this))
+                .setNegativeButton(R.string.cancel, null)
+                .show();
+    }
+
+    /** Actually starts the Android installer. */
+    private void launchInstaller(android.net.Uri contentUri) {
         try {
-            if (PackageUtils.needsUnknownSourcesPermission(this)) {
-                PackageUtils.openUnknownSourcesSettings(this);
-                Ui.toast(this, "Allow “install unknown apps” for CodeServer Go,"
-                        + " then open the downloaded APK");
-                return;
-            }
-            Intent intent = new Intent(Intent.ACTION_VIEW);
+            Intent intent = new Intent(android.content.Intent.ACTION_INSTALL_PACKAGE);
             intent.setDataAndType(contentUri, UpdateChecker.APK_MIME);
             intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             startActivity(intent);
-        } catch (Throwable t) {
-            Ui.toast(this, "Installer did not start: " + t.getMessage());
+            return;
+        } catch (Throwable tInstall) {
+            try {
+                Intent intent = new Intent(Intent.ACTION_VIEW);
+                intent.setDataAndType(contentUri, UpdateChecker.APK_MIME);
+                intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivity(intent);
+                return;
+            } catch (Throwable tInstall2) {
+                Ui.toast(this, "Installer did not start: " + tInstall2.getMessage());
+            }
         }
     }
 
