@@ -224,9 +224,13 @@ final class UpdateChecker {
 
     static long localVersionCode(Context context) {
         try {
-            return context.getPackageManager()
-                    .getPackageInfo(context.getPackageName(), 0)
-                    .getLongVersionCode();
+            android.content.pm.PackageInfo info =
+                    context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
+            try {
+                return info.getLongVersionCode();   // API 28+
+            } catch (Throwable t) {
+                return info.versionCode;            // deprecated but present on API 26/27
+            }
         } catch (Throwable t) {
             return 0;
         }
