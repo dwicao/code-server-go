@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   release:
-    runs-on: ubuntu-24.04-arm   # arm64 runner matches the proot payload; falls back to plain ubuntu-24.04 if preview labels are gone
+    runs-on: ubuntu-24.04-arm   # arm64 runner matches the proot payload
     steps:
       - uses: actions/checkout@v4
 
@@ -37,27 +37,33 @@ jobs:
           }
 
       - name: Build release APK
-        id: build
         run: |
           TAG="${GITHUB_REF#refs/tags/}"
           VERSION_NAME="${TAG#v}"
+          echo "building $VERSION_NAME from $TAG"
           bash build.sh
           APK="dist/CodeServerGo-${VERSION_NAME}.apk"
           test -f "$APK"
           apksigner verify --print-certs "$APK"
-          echo "apk=$APK" >> "$GITHUB_OUTPUT"
-          echo "version_name=$VERSION_NAME" >> "$GITHUB_OUTPUT"
+          echo "APK=$APK" >> "$GITHUB_ENV"
+          echo "VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
+          ls -lh "$APK"
 
       - name: Generate version.json (with apkUrl + sha256)
-        run: bash tools/make-version-json.sh "${GITHUB_REF#refs/tags/}" "${{ steps.build.outputs.apk }}" > version.json
+        run: |
+          TAG="${GITHUB_REF#refs/tags/}"
+          echo "tag=$TAG APK=$APK"
+          bash tools/make-version-json.sh "$TAG" "$APK" > version.json
+          cat version.json
 
       - name: Create GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           TAG="${GITHUB_REF#refs/tags/}"
+          NOTES="$(python3 -c 'import json;print(json.load(open("version.json"))["notes"])')"
           gh release create "$TAG" \
             --title "CodeServer Go ${TAG#v}" \
-            --notes-file <(python3 -c 'import json;print(json.load(open("version.json"))["notes"])') \
-            "${{ steps.build.outputs.apk }}" \
+            --notes "$NOTES" \
+            "$APK" \
             version.json
