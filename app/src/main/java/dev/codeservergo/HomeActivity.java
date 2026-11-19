@@ -106,6 +106,7 @@ public class HomeActivity extends Activity {
         applyPalette();
         renderLocal();
         render();
+        if (prefs.shouldCheckForUpdate()) checkForUpdates(false);
     }
 
     // ------------------------------------------------------------------ look
@@ -631,6 +632,8 @@ public class HomeActivity extends Activity {
             Ui.toast(this, "Trusted certificates cleared");
         }));
 
+        box.addView(settingRow(getString(R.string.check_updates),
+                "Last checked: " + lastCheckLabel(), v -> checkForUpdates(true)));
         box.addView(settingRow(getString(R.string.about), getString(R.string.version,
                 Prefs.versionName(this)), v -> showAbout()));
 
@@ -639,6 +642,89 @@ public class HomeActivity extends Activity {
                 .setPositiveButton(R.string.close, null)
                 .create();
         d.show();
+    }
+
+    // -------------------------------------------------------------- updates
+
+    private String lastCheckLabel() {
+        long last = prefs.lastUpdateCheckMs();
+        if (last <= 0) return "never";
+        long ago = System.currentTimeMillis() - last;
+        long min = Math.max(1, ago / 60000);
+        if (min < 60) return min + " min ago";
+        long hr = min / 60;
+        if (hr < 48) return hr + " hr ago";
+        return (hr / 24) + " days ago";
+    }
+
+    private void checkForUpdates(final boolean manual) {
+        if (manual) Ui.toast(this, "Checking for updates\u2026");
+        UpdateChecker.check(this, manual, new UpdateChecker.Callback() {
+            @Override
+            public void onUpdateAvailable(final UpdateChecker.ReleaseInfo info) {
+                String message = getString(R.string.update_available,
+                        Prefs.versionName(HomeActivity.this), info.versionName);
+                if (info.notes != null && !info.notes.isEmpty()) {
+                    message += "\n\n" + info.notes;
+                }
+                new AlertDialog.Builder(HomeActivity.this)
+                        .setTitle(R.string.update_available_title)
+                        .setMessage(message)
+                        .setPositiveButton(R.string.update_download, (d, w) -> downloadUpdate(info))
+                        .setNegativeButton(R.string.update_later, null)
+                        .show();
+            }
+
+            @Override
+            public void onUpToDate(String currentVersionName, long currentVersionCode) {
+                if (manual) {
+                    Ui.toast(HomeActivity.this, getString(R.string.update_uptodate,
+                            currentVersionName));
+                }
+            }
+
+            @Override
+            public void onError(String message) {
+                if (manual) {
+                    Ui.toast(HomeActivity.this,
+                            "Update check failed: " + message);
+                }
+            }
+        });
+    }
+
+    private void downloadUpdate(final UpdateChecker.ReleaseInfo info) {
+        Ui.toast(this, getString(R.string.update_downloading, info.versionName));
+        UpdateChecker.downloadApk(this, info, new UpdateChecker.Callback2() {
+            @Override
+            public void onDownloaded(final android.net.Uri contentUri) {
+                ui.post(() -> installApk(contentUri));
+            }
+
+            @Override
+            public void onFailed(final String message) {
+                ui.post(() -> Ui.toast(HomeActivity.this,
+                        "Download failed: " + message));
+            }
+        });
+    }
+
+    /** Hands the downloaded APK to the system package installer. */
+    private void installApk(android.net.Uri contentUri) {
+        try {
+            if (PackageUtils.needsUnknownSourcesPermission(this)) {
+                PackageUtils.openUnknownSourcesSettings(this);
+                Ui.toast(this, "Allow “install unknown apps” for CodeServer Go,"
+                        + " then open the downloaded APK");
+                return;
+            }
+            Intent intent = new Intent(Intent.ACTION_VIEW);
+            intent.setDataAndType(contentUri, UpdateChecker.APK_MIME);
+            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            startActivity(intent);
+        } catch (Throwable t) {
+            Ui.toast(this, "Installer did not start: " + t.getMessage());
+        }
     }
 
     private String themeLabel() {

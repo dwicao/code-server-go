@@ -1,0 +1,63 @@
+name: release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04-arm   # arm64 runner matches the proot payload; falls back to plain ubuntu-24.04 if preview labels are gone
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y openjdk-17-jdk-headless android-sdk-build-tools \
+                                    apksigner zipalign unzip python3 curl openssl
+
+      - name: Fetch build inputs (android.jar, r8 dexer)
+        run: bash tools/fetch-tools.sh
+
+      - name: Unit tests
+        run: bash tools/test.sh
+
+      - name: Check tag matches version.json
+        run: |
+          TAG="${GITHUB_REF#refs/tags/}"
+          VERSION_NAME="${TAG#v}"
+          FILE_VERSION="$(python3 -c 'import json;print(json.load(open("version.json"))["versionName"])')"
+          test "$FILE_VERSION" = "$VERSION_NAME" || {
+            echo "tag $TAG does not match version.json versionName $FILE_VERSION — bump version.json first"
+            exit 1
+          }
+
+      - name: Build release APK
+        id: build
+        run: |
+          TAG="${GITHUB_REF#refs/tags/}"
+          VERSION_NAME="${TAG#v}"
+          bash build.sh
+          APK="dist/CodeServerGo-${VERSION_NAME}.apk"
+          test -f "$APK"
+          apksigner verify --print-certs "$APK"
+          echo "apk=$APK" >> "$GITHUB_OUTPUT"
+          echo "version_name=$VERSION_NAME" >> "$GITHUB_OUTPUT"
+
+      - name: Generate version.json (with apkUrl + sha256)
+        run: bash tools/make-version-json.sh "${GITHUB_REF#refs/tags/}" "${{ steps.build.outputs.apk }}" > version.json
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${GITHUB_REF#refs/tags/}"
+          gh release create "$TAG" \
+            --title "CodeServer Go ${TAG#v}" \
+            --notes-file <(python3 -c 'import json;print(json.load(open("version.json"))["notes"])') \
+            "${{ steps.build.outputs.apk }}" \
+            version.json

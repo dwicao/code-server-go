@@ -1,0 +1,30 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04-arm   # arm64 runner matches the proot payload; falls back to plain ubuntu-24.04 if preview labels are gone
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y openjdk-17-jdk-headless android-sdk-build-tools \
+                                    apksigner zipalign unzip python3 curl
+
+      - name: Fetch build inputs (android.jar, r8 dexer)
+        run: bash tools/fetch-tools.sh
+
+      - name: Unit tests
+        run: bash tools/test.sh
+
+      - name: Build + sign
+        run: bash build.sh
+
+      - name: Verify signature
+        run: apksigner verify --print-certs dist/*.apk

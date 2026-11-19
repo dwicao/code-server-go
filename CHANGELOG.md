@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.2.0 — CI, in-app updates, unit tests
+- **New:** unit tests for URL handling, version comparison and the tar.gz extractor
+  (`app/src/test`, run with `tools/test.sh`). 15 tests covering the dialects that caused the
+  native-module loss.
+- **New:** in-app updater — polls `releases/latest/download/version.json`, compares
+  `versionCode`, downloads via DownloadManager, verifies SHA-256, hands to the package installer.
+  Available from Settings → Check for updates and automatically once a day.
+- **New:** GitHub Actions `ci` workflow builds every push/PR; pushing a tag `v*` creates a
+  release with the signed APK and an enriched `version.json`.
+- **Changed:** release builds are signed with the AOSP test key (`tools/aosp-testkey/`), the same
+  key the CI uses, so every build is signature-compatible. **Upgrading from a build signed with the
+  old local key requires uninstalling once** (Android refuses the mismatch).
+- Bundled runtime: proot + Ubuntu rootfs + code-server (works on the Samsung Fold 6 / Android 16).
+
+
 ## 1.1.6 — argument parsing
 - **Fixed:** `--auth none` was passed as a single argv token, so code-server answered
   `Unknown option --auth none` and never bound the port. It is now two arguments.

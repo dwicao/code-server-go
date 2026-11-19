@@ -1,7 +1,5 @@
 package dev.codeservergo;
 
-import android.net.Uri;
-
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -27,45 +25,23 @@ final class Server {
     }
 
     String host() {
-        Uri u = Uri.parse(url);
-        String h = u.getHost();
-        if (h == null) return url;
-        int port = u.getPort();
-        return port > 0 ? h + ":" + port : h;
+        String h = Urls.host(url);
+        return h == null ? url : h;
     }
 
     String origin() {
-        Uri u = Uri.parse(url);
-        String scheme = u.getScheme() == null ? "http" : u.getScheme();
-        String host = u.getHost();
-        if (host == null) return scheme + "://" + host();
-        int port = u.getPort();
-        return scheme + "://" + host + (port > 0 ? ":" + port : "");
+        String o = Urls.origin(url);
+        return o == null ? url : o;
     }
 
     /** Normalises what a human types into something a WebView can load. */
     static String normalize(String raw) {
-        if (raw == null) return null;
-        String s = raw.trim();
-        if (s.isEmpty()) return null;
-        if (!s.contains("://")) s = "http://" + s;
-        Uri u = Uri.parse(s);
-        String scheme = u.getScheme();
-        if (scheme == null) return null;
-        scheme = scheme.toLowerCase();
-        if (!scheme.equals("http") && !scheme.equals("https")) return null;
-        if (u.getHost() == null || u.getHost().isEmpty()) return null;
-        return s;
+        return Urls.normalize(raw);
     }
 
     /** Falls back to the host name when the user leaves the name field empty. */
     static String nameOrHost(String name, String url) {
-        if (name != null && !name.trim().isEmpty()) return name.trim();
-        Uri u = Uri.parse(url);
-        String host = u.getHost();
-        if (host == null) return "code-server";
-        int port = u.getPort();
-        return port > 0 ? host + ":" + port : host;
+        return Urls.nameOrHost(name, url);
     }
 
     JSONObject toJson() throws JSONException {

@@ -5,3 +5,6 @@ tools/r8.jar
 tools/android-34/android.jar
 *.iml
 .idea/
+tools/aosp-testkey/testkey.pem
+tools/aosp-testkey/testkey.p12
+tools/test-lib/

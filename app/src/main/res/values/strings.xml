@@ -47,6 +47,15 @@ Nothing needs root, Termux or a computer: proot runs the runtime inside the app 
     <string name="local_installing">Installing…</string>
     <string name="local_failed">Local editor failed to start</string>
 
+    <!-- In-app updates -->
+    <string name="check_updates">Check for updates</string>
+    <string name="update_available_title">Update available</string>
+    <string name="update_available">Version %1$s is installed. A newer version %2$s is available on GitHub.</string>
+    <string name="update_download">Download</string>
+    <string name="update_later">Later</string>
+    <string name="update_uptodate">You are on the latest version (%1$s)</string>
+    <string name="update_downloading">Downloading CodeServer Go %1$s…</string>
+
     <!-- Browser chrome -->
     <string name="back">Back</string>
     <string name="forward">Forward</string>

@@ -22,8 +22,17 @@ DIST="$ROOT/dist"
 MANIFEST="$APP/AndroidManifest.xml"
 
 APP_ID="dev.codeservergo"
-VERSION_CODE="${VERSION_CODE:-1}"
-VERSION_NAME="${VERSION_NAME:-1.0.0}"
+
+# version defaults come from version.json at the repo root (the same file the app's updater reads)
+if [ -f "$ROOT/version.json" ]; then
+    VERSION_CODE_DEFAULT="$(python3 -c 'import json;print(json.load(open("'$ROOT/version.json'"))["versionCode"])')"
+    VERSION_NAME_DEFAULT="$(python3 -c 'import json;print(json.load(open("'$ROOT/version.json'"))["versionName"])')"
+else
+    VERSION_CODE_DEFAULT=1
+    VERSION_NAME_DEFAULT="1.0.0"
+fi
+VERSION_CODE="${VERSION_CODE:-$VERSION_CODE_DEFAULT}"
+VERSION_NAME="${VERSION_NAME:-$VERSION_NAME_DEFAULT}"
 # targetSdk 28 is deliberate: Android only allows executing binaries from app storage for
 # apps targeting API <= 28. That is what makes the bundled proot + rootfs runtime work
 # (the same trade-off Termux makes). Sideload-only consequence; nothing else needs it.
@@ -140,21 +149,48 @@ echo "==> aligning"
 "$ZIPALIGN" -f -p 4 "$OUT/base.apk" "$OUT/aligned.apk"
 
 echo "==> signing"
-KEYSTORE="$ROOT/keystore/codeservergo.jks"
-STORE_PASS="${STORE_PASS:-codeservergo}"
-KEY_ALIAS="${KEY_ALIAS:-codeservergo}"
-if [ ! -f "$KEYSTORE" ]; then
-    mkdir -p "$ROOT/keystore"
-    [ -n "$KEYTOOL" ] || die "keytool not found, cannot create a signing key"
-    "$KEYTOOL" -genkeypair -v \
-        -keystore "$KEYSTORE" \
-        -storepass "$STORE_PASS" \
-        -keypass "$STORE_PASS" \
-        -alias "$KEY_ALIAS" \
-        -keyalg RSA -keysize 2048 -validity 10000 \
-        -dname "CN=CodeServer Go, O=CodeServer Go, C=ID" >/dev/null 2>&1 \
-        || die "keytool failed"
-    echo "    created $KEYSTORE (keep it: it identifies updates of this app)"
+KEYSTORE="${KEYSTORE:-}"
+STORE_PASS="${STORE_PASS:-android}"
+KEY_ALIAS="${KEY_ALIAS:-androidtestkey}"
+AOSP_DIR="$ROOT/tools/aosp-testkey"
+
+# Default: the AOSP test key (tools/aosp-testkey/), so every build (and the CI releases) is
+# consistently signed and the app can update itself in-app. Set KEYSTORE=/path/to.jks to override.
+if [ -z "$KEYSTORE" ]; then
+    if [ -f "$AOSP_DIR/testkey.pk8" ]; then
+        if [ ! -f "$AOSP_DIR/testkey.p12" ]; then
+            [ -n "$(command -v openssl || true)" ] || die "openssl not found, cannot import testkey"
+            openssl pkcs8 -inform DER -nocrypt \
+                -in "$AOSP_DIR/testkey.pk8" -out "$AOSP_DIR/testkey.pem" \
+                || die "cannot convert testkey.pk8"
+            openssl pkcs12 -export \
+                -out "$AOSP_DIR/testkey.p12" \
+                -inkey "$AOSP_DIR/testkey.pem" \
+                -in "$AOSP_DIR/testkey.x509.pem" \
+                -name androidtestkey -password pass:android \
+                || die "cannot create testkey.p12"
+        fi
+        KEYSTORE="$AOSP_DIR/testkey.p12"
+        echo "    using the AOSP test key (see tools/aosp-testkey/README.md)"
+    else
+        KEYSTORE="$ROOT/keystore/codeservergo.jks"
+        STORE_PASS="${STORE_PASS:-codeservergo}"
+        KEY_ALIAS="${KEY_ALIAS:-codeservergo}"
+        mkdir -p "$ROOT/keystore"
+        [ -n "$KEYTOOL" ] || die "keytool not found, cannot create a signing key"
+        if [ ! -f "$KEYSTORE" ]; then
+            "$KEYTOOL" -genkeypair -v \
+                -keystore "$KEYSTORE" \
+                -storepass "$STORE_PASS" \
+                -keypass "$STORE_PASS" \
+                -alias "$KEY_ALIAS" \
+                -keyalg RSA -keysize 2048 -validity 10000 \
+                -dname "CN=CodeServer Go, O=CodeServer Go, C=ID" >/dev/null 2>&1 \
+                || die "keytool failed"
+            echo "    created $KEYSTORE (keep it: it identifies updates of this app)"
+        fi
+        echo "    WARNING: using local debug key — CI releases use the AOSP test key instead"
+    fi
 fi
 
 APK="$DIST/CodeServerGo-${VERSION_NAME}.apk"

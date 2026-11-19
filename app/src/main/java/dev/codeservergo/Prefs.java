@@ -21,6 +21,7 @@ final class Prefs {
     private static final String K_EXTRA_KEYS = "extra_keys";
     private static final String K_ZOOM = "zoom_";
     private static final String K_UPLOAD_DIR = "upload_dir";
+    private static final String K_LAST_UPDATE_CHECK = "last_update_check";
     private static final String K_TRUSTED = "trusted_certs";
 
     private final SharedPreferences sp;
@@ -107,6 +108,20 @@ final class Prefs {
 
     void setUploadDir(String uri) {
         sp.edit().putString(K_UPLOAD_DIR, uri).apply();
+    }
+
+    // --- in-app updates -----------------------------------------------------
+
+    long lastUpdateCheckMs() {
+        return sp.getLong(K_LAST_UPDATE_CHECK, 0L);
+    }
+
+    void setLastUpdateCheckAgeMs(long ms) {
+        sp.edit().putLong(K_LAST_UPDATE_CHECK, ms).apply();
+    }
+
+    boolean shouldCheckForUpdate() {
+        return System.currentTimeMillis() - lastUpdateCheckMs() > 24L * 60 * 60 * 1000;
     }
 
     // --- certificate pinning for self-signed code-server ------------------

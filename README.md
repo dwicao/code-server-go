@@ -58,6 +58,36 @@ things, and nothing else — it is a thin, fast shell around the real code-serve
 - Per-server zoom (CSS zoom, persisted), "keep screen on", shareable address copy.
 - Dark / light / follow-system theme, applied without destroying the live session.
 
+## CI & releases
+
+GitHub Actions builds every push and PR (`.github/workflows/ci.yml`): toolchain install, unit
+tests, signed APK. Pushing a tag `vX.Y.Z` (`.github/workflows/release.yml`) runs the same pipeline,
+creates a GitHub release and attaches the APK plus an enriched `version.json` (with `apkUrl` and
+`sha256`). The tag must match `version.json` → `versionName`, so bump `version.json` first.
+
+To cut a release:
+
+```bash
+# version.json contains versionCode, versionName and notes
+git commit -am "v1.2.1"
+git tag v1.2.1 && git push && git push --tags
+```
+
+Releases are signed with the **AOSP test key** (`tools/aosp-testkey/`), the same key every CI
+release and local build uses. That is what makes in-app updates possible; the test key is public
+and insecure by design (see the file header there) — do not put a store-grade build here.
+
+**Upgrading from a build signed with the old local key:** Android will refuse the update. You must
+uninstall once and reinstall (the app stores no server-side state worth keeping; your server list
+lives in app prefs and would be lost once).
+
+## In-app updates
+
+The app polls `releases/latest/download/version.json` (once a day, or immediately from
+*Settings → Check for updates*). When `versionCode` is newer than the installed one it offers to
+download the APK via `DownloadManager`, verifies the SHA-256 hash, and hands the result to the
+system package installer — no root, no permissions beyond installing unknown apps.
+
 ## Build
 
 The toolchain has no Gradle: on an arm64 device (or inside a proot like this one) `aapt2`, `d8` and
@@ -98,6 +128,13 @@ attribute (aapt2 needs it). AGP 8 derives the package from `namespace` instead a
 attribute. If you want an IDE build, create an empty Compose-less "No Activity" project with
 namespace `dev.codeservergo`, copy `app/src/main/{java,res}` in, and remove the `package` attribute
 from the manifest.
+
+Unit tests (pure-JVM, no Android) live in `app/src/test` and cover the URL handling, version
+comparison and the tar.gz extractor that defeated us in earlier releases:
+
+```bash
+bash tools/test.sh
+```
 
 ## Local editor (runs on the phone, no PC needed)
 

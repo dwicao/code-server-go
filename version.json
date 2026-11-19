@@ -1,0 +1,5 @@
+{
+  "versionCode": 20,
+  "versionName": "1.2.0",
+  "notes": "Bundled local code-server runtime, in-app self-update from GitHub releases."
+}

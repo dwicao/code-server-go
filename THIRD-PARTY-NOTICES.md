@@ -28,3 +28,8 @@ available from the upstream repository linked above. The binaries are unmodified
 
 These are fetched by the user's device on first setup. The app does not modify them; it unpacks them
 into its private storage and runs them through proot.
+
+## Test-only (not in the APK)
+
+- JUnit 4.13.2 (EPL-1.0) + hamcrest-core 1.3 (BSD-3-Clause) — used by `tools/test.sh`, downloaded
+  into `tools/test-lib/`, never packaged.
