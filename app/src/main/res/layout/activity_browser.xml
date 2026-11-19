@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FF14171C">
+
+    <LinearLayout
+        android:id="@+id/column"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <!-- Editor chrome: only what a browser tab cannot give you. -->
+        <LinearLayout
+            android:id="@+id/top_bar"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:background="#FF1A1E24"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="4dp"
+            android:paddingEnd="4dp">
+
+            <ImageButton
+                android:id="@+id/btn_back"
+                style="@style/ToolButton"
+                android:contentDescription="@string/back"
+                android:src="@drawable/ic_back" />
+
+            <ImageButton
+                android:id="@+id/btn_forward"
+                style="@style/ToolButton"
+                android:contentDescription="@string/forward"
+                android:src="@drawable/ic_forward" />
+
+            <ImageButton
+                android:id="@+id/btn_reload"
+                style="@style/ToolButton"
+                android:contentDescription="@string/reload"
+                android:src="@drawable/ic_reload" />
+
+            <LinearLayout
+                android:id="@+id/title_box"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_marginStart="6dp"
+                android:layout_marginEnd="6dp"
+                android:layout_weight="1"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <View
+                    android:id="@+id/status_dot"
+                    android:layout_width="8dp"
+                    android:layout_height="8dp"
+                    android:layout_marginEnd="8dp"
+                    android:background="@drawable/bg_dot" />
+
+                <TextView
+                    android:id="@+id/txt_title"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:ellipsize="middle"
+                    android:singleLine="true"
+                    android:text="@string/connecting"
+                    android:textColor="#FFD7DCE4"
+                    android:textSize="13sp" />
+            </LinearLayout>
+
+            <ImageButton
+                android:id="@+id/btn_switch"
+                style="@style/ToolButton"
+                android:contentDescription="@string/switch_server"
+                android:src="@drawable/ic_swap" />
+
+            <ImageButton
+                android:id="@+id/btn_keyboard"
+                style="@style/ToolButton"
+                android:contentDescription="@string/keyboard"
+                android:src="@drawable/ic_keyboard" />
+
+            <ImageButton
+                android:id="@+id/btn_fullscreen"
+                style="@style/ToolButton"
+                android:contentDescription="@string/fullscreen"
+                android:src="@drawable/ic_fullscreen" />
+
+            <ImageButton
+                android:id="@+id/btn_more"
+                style="@style/ToolButton"
+                android:contentDescription="@string/more"
+                android:src="@drawable/ic_more" />
+        </LinearLayout>
+
+        <ProgressBar
+            android:id="@+id/progress"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="2dp"
+            android:max="100"
+            android:progress="0"
+            android:progressTint="#FF3E8EF7" />
+
+        <LinearLayout
+            android:id="@+id/body"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="horizontal">
+
+            <!-- DeX / tablet rail: one tap to jump between servers. -->
+            <LinearLayout
+                android:id="@+id/rail"
+                android:layout_width="56dp"
+                android:layout_height="match_parent"
+                android:background="#FF171B21"
+                android:gravity="center_horizontal"
+                android:orientation="vertical"
+                android:paddingTop="8dp"
+                android:paddingBottom="8dp"
+                android:visibility="gone" />
+
+            <FrameLayout
+                android:id="@+id/web_container"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1">
+
+                <WebView
+                    android:id="@+id/web"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="#FF14171C" />
+
+                <LinearLayout
+                    android:id="@+id/overlay"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="#FF14171C"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:paddingStart="32dp"
+                    android:paddingEnd="32dp"
+                    android:visibility="gone">
+
+                    <ProgressBar
+                        android:id="@+id/overlay_spinner"
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:indeterminateTint="#FF3E8EF7" />
+
+                    <TextView
+                        android:id="@+id/overlay_title"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="18dp"
+                        android:gravity="center"
+                        android:text="@string/connecting"
+                        android:textColor="#FFE6E9EF"
+                        android:textSize="16sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/overlay_body"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:gravity="center"
+                        android:lineSpacingExtra="3dp"
+                        android:textColor="#FF8A93A0"
+                        android:textSize="13sp"
+                        android:visibility="gone" />
+
+                    <Button
+                        android:id="@+id/overlay_button"
+                        android:layout_width="wrap_content"
+                        android:layout_height="44dp"
+                        android:layout_marginTop="20dp"
+                        android:background="@drawable/bg_accent_button"
+                        android:minWidth="140dp"
+                        android:paddingStart="24dp"
+                        android:paddingEnd="24dp"
+                        android:text="@string/retry"
+                        android:textAllCaps="false"
+                        android:textColor="#FFFFFFFF"
+                        android:textSize="14sp"
+                        android:visibility="gone" />
+                </LinearLayout>
+            </FrameLayout>
+        </LinearLayout>
+
+        <!-- Phone / tablet IME companion: send the keys an on-screen keyboard cannot. -->
+        <LinearLayout
+            android:id="@+id/key_strip"
+            android:layout_width="match_parent"
+            android:layout_height="44dp"
+            android:background="#FF171B21"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="6dp"
+            android:paddingEnd="6dp"
+            android:visibility="gone" />
+    </LinearLayout>
+</FrameLayout>

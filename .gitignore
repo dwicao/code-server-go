@@ -1,0 +1,7 @@
+build/
+dist/
+keystore/
+tools/r8.jar
+tools/android-34/android.jar
+*.iml
+.idea/
